@@ -14,10 +14,13 @@ import java.util.UUID;
 @Repository
 public interface IncidentRepository extends JpaRepository<Incident, UUID> {
 
+    // Idempotency check — used by every ingestion service
     Optional<Incident> findByExternalIdAndSource(String externalId, DataSource source);
 
+    // Snapshot compiler query — excludes ARCHIVED events
     List<Incident> findByStatusNot(IncidentStatus status);
 
+    // PostGIS spatial query — core of the nearby feature
     @Query(value = """
             SELECT * FROM incidents
             WHERE ST_DWithin(
