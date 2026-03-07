@@ -118,6 +118,13 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-webflux</artifactId>
     </dependency>
+
+    <!-- ROME-RSS-PARSER -->
+    <dependency>
+        <groupId>com.rometools</groupId>
+        <artifactId>rome</artifactId>
+        <version>2.1.0</version>
+    </dependency>
 </dependencies>
 
 	<build>

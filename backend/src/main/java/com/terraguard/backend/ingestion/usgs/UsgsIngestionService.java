@@ -1,8 +1,8 @@
 package com.terraguard.backend.ingestion.usgs;
 
-import com.terraguard.backend.cache.CacheService;
-import com.terraguard.backend.domain.entity.IncidentRepository;
+
 import com.terraguard.backend.domain.enums.DataSource;
+import com.terraguard.backend.ingestion.IngestionHelper;
 import com.terraguard.backend.ingestion.usgs.dto.UsgsFeature;
 import com.terraguard.backend.ingestion.usgs.dto.UsgsFeatureCollection;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class UsgsIngestionService {
 
     private final WebClient webClient;
-    private final IncidentRepository incidentRepository;
-    private final CacheService cacheService;
+    private final IngestionHelper ingestionHelper;
 
     private static final String USGS_URL =
         "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson";
@@ -87,18 +86,31 @@ public class UsgsIngestionService {
             double latitude   = feature.getGeometry().getLatitude();
 
             // ── Step 3: UPSERT ───────────────────────────────
-            incidentRepository.upsertIncident(
-                    title,
-                    externalId,
-                    DataSource.USGS.name(),
-                    "EARTHQUAKE",
-                    magnitude,
-                    longitude,
-                    latitude
+            // incidentRepository.upsertIncident(
+            //         title,
+            //         externalId,
+            //         DataSource.USGS.name(),
+            //         "EARTHQUAKE",
+            //         magnitude,   
+            //         longitude,
+            //         latitude
+            // );
+
+
+            // // ── Step 4: Mark snapshot dirty ──────────────────
+            // cacheService.setSnapshotDirty();
+
+            // ── Step 3 & 4 Combined(UPSERT + MARK DIRTY) ───────────────────────────
+            ingestionHelper.persistIncident(
+                title,
+                externalId,
+                DataSource.USGS.name(),
+                "EARTHQUAKE",
+                magnitude,
+                longitude,
+                latitude
             );
 
-            // ── Step 4: Mark snapshot dirty ──────────────────
-            cacheService.setSnapshotDirty();
 
             log.debug("[USGS] Upserted: {} ({})", externalId, title);
 
