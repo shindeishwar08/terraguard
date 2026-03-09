@@ -77,4 +77,8 @@ public class Incident {
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private OffsetDateTime updatedAt = OffsetDateTime.now();
+
+    //New Alteration
+    @Column(name="contributing_sources", nullable = false)
+    private String contributingSources;
 }

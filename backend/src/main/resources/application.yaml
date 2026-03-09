@@ -11,6 +11,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    defer-datasource-initialization: true
     show-sql: true
     open-in-view: false
     properties:
