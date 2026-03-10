@@ -87,4 +87,53 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
         @Param("severity")   BigDecimal severity,
         @Param("confidence") BigDecimal confidence
     );
+
+
+
+    @Query(value = """
+        SELECT COUNT(*) > 0 FROM incidents
+        WHERE id != :id
+        AND source != :source
+        AND ST_DWithin(
+            geometry::geography,
+            (SELECT geometry::geography FROM incidents WHERE id = :id),
+            :radiusMeters
+        )
+    """, nativeQuery = true)
+    boolean existsNearbyFromDifferentSource(
+        @Param("id")           UUID id,
+        @Param("source")       String source,
+        @Param("radiusMeters") double radiusMeters
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE incidents 
+        SET status = :status, updated_at = NOW() 
+        WHERE id = :id
+    """, nativeQuery = true)
+    void updateStatus(@Param("id") UUID id, 
+        @Param("status") String status
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE incidents SET
+            status          = :status,
+            override_locked = true,
+            override_reason = :reason,
+            override_by     = :overrideBy,
+            override_at     = NOW(),
+            updated_at      = NOW()
+        WHERE id = :id
+        """, nativeQuery = true)
+    void applyOverride(
+        @Param("id")         UUID id,
+        @Param("status")     String status,
+        @Param("reason")     String reason,
+        @Param("overrideBy") String overrideBy
+    );  
+
 }

@@ -29,37 +29,42 @@ public class IngestionHelper {
             double longitude,
             double latitude
     ) {
-        // Step 1: Upsert — also updates contributing_sources
+        // Step 1: Upsert raw data
         incidentRepository.upsertIncident(
                 title, externalId, source, disasterType,
                 magnitude, longitude, latitude
         );
 
-        // Step 2: Fetch saved incident
+        // Step 2: Fetch hydrated incident
         incidentRepository.findByExternalIdAndSource(
                 externalId,
                 com.terraguard.backend.domain.enums.DataSource.valueOf(source)
         ).ifPresent(incident -> {
 
-            // Step 3: Calculate scores
-            BigDecimal severity   = scoringEngineService.calculateSeverityIndex(incident);
-            BigDecimal confidence = scoringEngineService.calculateConfidenceScore(incident);
+            // Step 3: Capture OLD severity BEFORE recalculation
+            BigDecimal oldSeverity = incident.getSeverityIndex();
 
-            // FIX: Update the Java object in memory so the FSM sees the real numbers!
-            incident.setSeverityIndex(severity);
-            incident.setConfidenceScore(confidence);
+            // Step 4: Calculate new scores
+            BigDecimal newSeverity  = scoringEngineService
+                    .calculateSeverityIndex(incident);
+            BigDecimal newConfidence = scoringEngineService
+                    .calculateConfidenceScore(incident);
 
-            // Step 4: Save scores back to DB
-            incidentRepository.updateScores(incident.getId(), severity, confidence);
+            // Step 5: Update in-memory + persist scores
+            incident.setSeverityIndex(newSeverity);
+            incident.setConfidenceScore(newConfidence);
+            incidentRepository.updateScores(
+                    incident.getId(), newSeverity, newConfidence);
 
-            // Step 5: Invalidate snapshot cache
+            // Step 6: FSM evaluation with true delta
+            lifecycleService.evaluateTransition(incident, oldSeverity);
+
+            // Step 7: Invalidate snapshot (AFTER all DB writes are done)
             cacheService.setSnapshotDirty();
 
-            // Step 6: Evaluate FSM transition (Now it evaluates the correct scores!)
-            lifecycleService.evaluateTransition(incident);
-
-            log.debug("[INGEST] Scored incident {}: severity={}, confidence={}",
-                    externalId, severity, confidence);
+            log.debug("[INGEST] {} scored: severity={} confidence={} delta={}",
+                    externalId, newSeverity, newConfidence,
+                    newSeverity.subtract(oldSeverity));
         });
     }
 }

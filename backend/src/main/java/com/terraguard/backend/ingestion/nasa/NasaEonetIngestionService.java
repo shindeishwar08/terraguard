@@ -130,27 +130,33 @@ public class NasaEonetIngestionService {
         if (event.getGeometry() == null || event.getGeometry().isEmpty()) return null;
 
         EonetGeometry latest = event.getGeometry()
-                .get(event.getGeometry().size() - 1);
+            .get(event.getGeometry().size() - 1);
 
         if ("Point".equals(latest.getType())) {
-            List<Double> coords = (List<Double>) latest.getCoordinates();
-            return new double[]{coords.get(0), coords.get(1)};
+            // Point fix: perfectly implemented
+            List<Number> coords = (List<Number>) latest.getCoordinates();
+            return new double[]{coords.get(0).doubleValue(), coords.get(1).doubleValue()};
 
         } else if ("Polygon".equals(latest.getType())) {
-            List<List<List<Double>>> rings =
-                (List<List<List<Double>>>) latest.getCoordinates();
+            // Polygon fix: Change Double to Number
+            List<List<List<Number>>> rings = 
+                (List<List<List<Number>>>) latest.getCoordinates();
             return calculateCentroid(rings.get(0));
         }
 
         return null;
     }
 
-    private double[] calculateCentroid(List<List<Double>> ring) {
+    
+    private double[] calculateCentroid(List<List<Number>> ring) {
         double sumLon = 0, sumLat = 0;
-        for (List<Double> point : ring) {
-            sumLon += point.get(0);
-            sumLat += point.get(1);
+        
+        for (List<Number> point : ring) {
+
+            sumLon += point.get(0).doubleValue();
+            sumLat += point.get(1).doubleValue();
         }
+        
         return new double[]{sumLon / ring.size(), sumLat / ring.size()};
     }
 }
