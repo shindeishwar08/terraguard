@@ -43,3 +43,23 @@ management:
   endpoint:
     health:
       show-details: always
+
+# use lowercase only
+terraguard:
+  highlight:
+    keywords:
+      - collapsed
+      - trapped
+      - casualties
+      - evacuate
+      - flooding
+      - wildfire
+      - magnitude
+      - tsunami
+      - explosion
+      - blocked
+      - injured
+      - missing
+      - destroyed
+      - emergency
+      - mayday
