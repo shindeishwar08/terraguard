@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,8 +21,8 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
     // Idempotency check — used by every ingestion service
     Optional<Incident> findByExternalIdAndSource(String externalId, DataSource source);
 
-    // Snapshot compiler query — excludes ARCHIVED events
-    List<Incident> findByStatusNot(IncidentStatus status);
+    // Snapshot compiler query — excludes ARCHIVED & RESOLVED events
+    List<Incident> findByStatusNotIn(Collection<IncidentStatus> statuses);
 
     // PostGIS spatial query — core of the nearby feature
     @Query(value = """
