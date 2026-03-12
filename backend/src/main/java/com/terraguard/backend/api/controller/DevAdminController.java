@@ -1,4 +1,4 @@
-package com.terraguard.backend.admin;
+package com.terraguard.backend.api.controller;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;

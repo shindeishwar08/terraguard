@@ -5,7 +5,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.terraguard.backend.api.IncidentMapper;
 import com.terraguard.backend.cache.CacheService;
+import com.terraguard.backend.domain.dto.GlobalEventResponse;
 import com.terraguard.backend.domain.entity.Incident;
 import com.terraguard.backend.domain.entity.IncidentRepository;
 import com.terraguard.backend.domain.enums.IncidentStatus;
@@ -21,6 +23,7 @@ public class SnapshotCompilerService {
     private final CacheService cacheService;
     private final ObjectMapper objectMapper;
     private final IncidentRepository incidentRepository;
+    private final IncidentMapper incidentMapper;
 
     @Scheduled(fixedRate = 5000)
     public void compileSnapshot(){
@@ -36,7 +39,7 @@ public class SnapshotCompilerService {
             List<GlobalEventResponse> snapshot = new ArrayList<>();
 
             for(Incident active : activeIncidents){
-                snapshot.add(mapToResponse(active));
+                snapshot.add(incidentMapper.toGlobalEventResponse(active));
             }
 
             String jsonSnapshot = objectMapper.writeValueAsString(snapshot);
@@ -49,20 +52,5 @@ public class SnapshotCompilerService {
         } catch (Exception e) {
             log.error("[SNAPSHOT] Failed to compile global snapshot", e);
         }
-    }
-
-    private GlobalEventResponse mapToResponse(Incident incident){
-        return GlobalEventResponse.builder()
-                .id(incident.getId())
-                .title(incident.getTitle())
-                .latitude(incident.getGeometry().getY())
-                .longitude(incident.getGeometry().getX())
-                .disasterType(incident.getDisasterType().name())
-                .status(incident.getStatus().name())
-                .severityIndex(incident.getSeverityIndex().doubleValue())
-                .confidenceScore(incident.getConfidenceScore().doubleValue())
-                .createdAt(incident.getCreatedAt()) 
-                .updatedAt(incident.getUpdatedAt())
-                .build();
     }
 }

@@ -27,13 +27,14 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
 
     // PostGIS spatial query — core of the nearby feature
     @Query(value = """
-            SELECT * FROM incidents
-            WHERE ST_DWithin(
-                geometry::geography,
-                ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
-                :radiusMeters
-            )
-            """, nativeQuery = true)
+        SELECT * FROM incidents
+        WHERE ST_DWithin(
+            geometry::geography,
+            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+            :radiusMeters
+        )
+        AND status NOT IN ('RESOLVED', 'ARCHIVED')
+        """, nativeQuery = true)
     List<Incident> findIncidentsWithinRadius(
             @Param("lat") double lat,
             @Param("lon") double lon,
