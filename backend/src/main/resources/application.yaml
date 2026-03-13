@@ -48,6 +48,9 @@ management:
 
 # use lowercase only
 terraguard:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
   highlight:
     keywords:
       - collapsed
