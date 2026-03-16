@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { ScatterplotLayer } from '@deck.gl/layers';
-import { useMapContext } from '../context/MapContext';
 import type { GlobalEventResponse } from '../types';
 
 const DISASTER_COLORS: Record<string, [number, number, number, number]> = {
@@ -14,13 +13,12 @@ const DEFAULT_COLOR: [number, number, number, number] = [200, 200, 200, 160];
 
 export const useEventLayer = (
     visibleTypes: Set<string>,
+    filteredSnapshot: GlobalEventResponse[],
     onEventClick: (event: GlobalEventResponse) => void
 ) => {
-    const { snapshot } = useMapContext();
-
     const filteredData = useMemo(() =>
-        snapshot.filter(e => visibleTypes.has(e.disaster_type)),
-        [snapshot, visibleTypes]
+        filteredSnapshot.filter(e => visibleTypes.has(e.disaster_type)),
+        [filteredSnapshot, visibleTypes]
     );
 
     const escalatingData = useMemo(() =>
@@ -40,7 +38,7 @@ export const useEventLayer = (
         },
         updateTriggers: {
             getFillColor: [visibleTypes],
-            getRadius: [snapshot],
+            getRadius: [filteredSnapshot],
         },
         radiusUnits: 'meters',
         radiusMinPixels: 4,

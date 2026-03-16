@@ -1,17 +1,27 @@
-import { useState } from 'react';
-import { MapProvider } from './context/MapContext';
+import { useState, useMemo } from 'react';
+import { MapProvider, useMapContext } from './context/MapContext';
 import { MapView } from './components/MapView';
 import { DeckOverlay } from './components/DeckOverlay';
 import { LayerToggle } from './components/LayerToggle';
 import { IncidentHub } from './components/IncidentHub';
 import { useSnapshot } from './hooks/useSnapshot';
 import { useGeolocation } from './hooks/useGeolocation';
+import { useTimeRewind } from './hooks/useTimeRewind';
+import { TimeRewindBar } from './components/TimeRewindBar';
 
 const ALL_TYPES = new Set(['EARTHQUAKE', 'WILDFIRE', 'FLOOD', 'CYCLONE']);
 
 const AppInner = () => {
   useSnapshot();
   useGeolocation();
+
+  const { snapshot } = useMapContext();
+  const { sliderValue, setSliderValue, isPlaying, togglePlay, min, max, getLabel } = useTimeRewind();
+
+  const filteredSnapshot = useMemo(() =>
+    snapshot.filter(e => new Date(e.created_at).getTime() <= sliderValue),
+    [snapshot, sliderValue]
+  );
 
   const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(ALL_TYPES));
 
@@ -27,9 +37,18 @@ const AppInner = () => {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <MapView />
-      <DeckOverlay visibleTypes={visibleTypes} />
+      <DeckOverlay visibleTypes={visibleTypes} filteredSnapshot={filteredSnapshot} />
       <LayerToggle visibleTypes={visibleTypes} onToggle={handleToggle} />
       <IncidentHub />
+      <TimeRewindBar
+        sliderValue={sliderValue}
+        min={min}
+        max={max}
+        isPlaying={isPlaying}
+        label={getLabel()}
+        onSliderChange={setSliderValue}
+        onTogglePlay={togglePlay}
+      />
     </div>
   );
 };

@@ -6,9 +6,10 @@ import type { GlobalEventResponse } from '../types';
 
 interface DeckOverlayProps {
     visibleTypes: Set<string>;
+    filteredSnapshot: GlobalEventResponse[];
 }
 
-export const DeckOverlay = ({ visibleTypes }: DeckOverlayProps) => {
+export const DeckOverlay = ({ visibleTypes, filteredSnapshot }: DeckOverlayProps) => {
     const { mapRef, setSelectedEvent, mapLoaded } = useMapContext();
     const overlayRef = useRef<MapboxOverlay | null>(null);
 
@@ -17,7 +18,7 @@ export const DeckOverlay = ({ visibleTypes }: DeckOverlayProps) => {
         console.log('[DeckOverlay] Selected event:', event.title);
     };
 
-    const layers = useEventLayer(visibleTypes, handleEventClick);
+    const layers = useEventLayer(visibleTypes, filteredSnapshot, handleEventClick);
 
     // Create overlay once when map loads
     useEffect(() => {
