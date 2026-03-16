@@ -23,6 +23,12 @@ interface MapContextType {
     setViewState: (vs: ViewState) => void;
     mapLoaded: boolean;
     setMapLoaded: (loaded: boolean) => void;
+    isLoading: boolean;
+    setIsLoading: (v: boolean) => void;
+    snapshotError: string | null;
+    setSnapshotError: (e: string | null) => void;
+    lastUpdated: Date | null;
+    setLastUpdated: (d: Date | null) => void;
 }
 
 const MapContext = createContext<MapContextType | null>(null);
@@ -42,6 +48,9 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
     const [nearbyEvents, setNearbyEvents] = useState<GlobalEventResponse[]>([]);
     const [viewState, setViewState] = useState<ViewState>(DEFAULT_VIEW_STATE);
     const [mapLoaded, setMapLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [snapshotError, setSnapshotError] = useState<string | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
 
     return (
@@ -57,6 +66,12 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
             setViewState,
             mapLoaded,
             setMapLoaded,
+            isLoading,
+            setIsLoading,
+            snapshotError,
+            setSnapshotError,
+            lastUpdated,
+            setLastUpdated,
         }}>
             {children}
         </MapContext.Provider>

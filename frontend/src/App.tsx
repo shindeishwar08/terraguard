@@ -4,6 +4,8 @@ import { MapView } from './components/MapView';
 import { DeckOverlay } from './components/DeckOverlay';
 import { LayerToggle } from './components/LayerToggle';
 import { IncidentHub } from './components/IncidentHub';
+import { Header } from './components/Header';
+import { LoadingSkeleton } from './components/LoadingSkeleton';
 import { useSnapshot } from './hooks/useSnapshot';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useTimeRewind } from './hooks/useTimeRewind';
@@ -15,7 +17,7 @@ const AppInner = () => {
   useSnapshot();
   useGeolocation();
 
-  const { snapshot } = useMapContext();
+  const { snapshot, isLoading } = useMapContext();
   const { sliderValue, setSliderValue, isPlaying, togglePlay, min, max, getLabel } = useTimeRewind();
 
   const filteredSnapshot = useMemo(() =>
@@ -34,12 +36,29 @@ const AppInner = () => {
     });
   };
 
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('terraguard-theme') !== 'light';
+  });
+
+  const toggleTheme = () => {
+    setIsDark(prev => {
+      const next = !prev;
+      localStorage.setItem('terraguard-theme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
+
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-      <MapView />
-      <DeckOverlay visibleTypes={visibleTypes} filteredSnapshot={filteredSnapshot} />
+      {isLoading && <LoadingSkeleton />}
+      <Header isDark={isDark} onToggleTheme={toggleTheme} />
+      <div style={{ paddingTop: 48, height: '100vh', boxSizing: 'border-box' }}>
+        <MapView isDark={isDark} />
+        <DeckOverlay visibleTypes={visibleTypes} filteredSnapshot={filteredSnapshot} />
+      </div>
       <LayerToggle visibleTypes={visibleTypes} onToggle={handleToggle} />
-      <IncidentHub />
       <TimeRewindBar
         sliderValue={sliderValue}
         min={min}
@@ -49,6 +68,7 @@ const AppInner = () => {
         onSliderChange={setSliderValue}
         onTogglePlay={togglePlay}
       />
+      <IncidentHub isMobile={isMobile} />
     </div>
   );
 };

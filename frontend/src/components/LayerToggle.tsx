@@ -16,7 +16,7 @@ export const LayerToggle = ({ visibleTypes, onToggle }: LayerToggleProps) => {
     return (
         <div style={{
             position: 'absolute',
-            top: 16,
+            top: 64,
             left: 16,
             background: 'rgba(0,0,0,0.75)',
             padding: '12px 16px',
@@ -29,7 +29,7 @@ export const LayerToggle = ({ visibleTypes, onToggle }: LayerToggleProps) => {
             fontFamily: 'monospace',
             fontSize: 13,
         }}>
-            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>TERRAGUARD</div>
+            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>DISASTER_TYPES</div>
             {DISASTER_TYPES.map(type => (
                 <label key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                     <input

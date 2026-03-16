@@ -18,7 +18,11 @@ const getConfidenceBadge = (score: number) => {
     return { label: 'LOW', color: '#ff3232' };
 };
 
-export const IncidentHub = () => {
+interface IncidentHubProps {
+    isMobile: boolean;
+}
+
+export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
     const { selectedEvent, setSelectedEvent, mapRef } = useMapContext();
 
     const [detail, setDetail] = useState<IncidentDetailResponse | null>(null);
@@ -75,10 +79,11 @@ export const IncidentHub = () => {
     return (
         <div style={{
             position: 'absolute',
-            top: 0,
+            top: isMobile ? 'auto' : 48,
+            bottom: isMobile ? 0 : 'auto',
             right: 0,
-            width: 380,
-            height: '100vh',
+            width: isMobile ? '100%' : 380,
+            height: isMobile ? '50vh' : 'calc(100vh - 48px)',
             background: 'rgba(10, 10, 10, 0.92)',
             color: '#fff',
             fontFamily: 'monospace',

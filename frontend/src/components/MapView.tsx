@@ -3,9 +3,14 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapContext } from '../context/MapContext';
 
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/dark';
+const DARK_STYLE  = 'https://tiles.openfreemap.org/styles/dark';
+const LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
-export const MapView = () => {
+interface MapViewProps {
+    isDark: boolean;
+}
+
+export const MapView = ({ isDark }: MapViewProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { mapRef, setViewState, setMapLoaded } = useMapContext();
 
@@ -14,7 +19,7 @@ export const MapView = () => {
 
         const map = new maplibregl.Map({
             container: containerRef.current,
-            style: MAP_STYLE,
+            style: isDark ? DARK_STYLE : LIGHT_STYLE,
             center: [0, 20],
             zoom: 2,
             attributionControl: false,
@@ -46,6 +51,12 @@ export const MapView = () => {
             mapRef.current = null;
         };
     }, []);
+
+    // Swap tile style when theme changes
+    useEffect(() => {
+        if (!mapRef.current) return;
+        mapRef.current.setStyle(isDark ? DARK_STYLE : LIGHT_STYLE);
+    }, [isDark]);
 
     return (
         <div
