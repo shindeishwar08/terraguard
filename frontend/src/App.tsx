@@ -3,6 +3,7 @@ import { MapProvider } from './context/MapContext';
 import { MapView } from './components/MapView';
 import { DeckOverlay } from './components/DeckOverlay';
 import { LayerToggle } from './components/LayerToggle';
+import { IncidentHub } from './components/IncidentHub';
 import { useSnapshot } from './hooks/useSnapshot';
 import { useGeolocation } from './hooks/useGeolocation';
 
@@ -28,6 +29,7 @@ const AppInner = () => {
       <MapView />
       <DeckOverlay visibleTypes={visibleTypes} />
       <LayerToggle visibleTypes={visibleTypes} onToggle={handleToggle} />
+      <IncidentHub />
     </div>
   );
 };
