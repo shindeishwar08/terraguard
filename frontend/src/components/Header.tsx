@@ -36,7 +36,7 @@ export const Header = ({ isDark, onToggleTheme }: HeaderProps) => {
       display: 'flex',
       alignItems: 'center',
       padding: '0 16px',
-      zIndex: 15,
+      zIndex: 25,
       fontFamily: 'monospace',
       gap: 12,
       fontSize: 12,

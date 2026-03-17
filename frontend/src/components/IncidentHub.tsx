@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMapContext } from '../context/MapContext';
 import { fetchIncidentDetail, fetchIncidentTimeline, fetchImpactRadius } from '../api';
 import type { IncidentDetailResponse, IncidentTimelineDto, IncidentImpactResponse } from '../types';
+import { ChatTab } from './ChatTab';
 
 const STATUS_COLORS: Record<string, string> = {
     DETECTED: '#888888',
@@ -29,6 +30,7 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
     const [timeline, setTimeline] = useState<IncidentTimelineDto[]>([]);
     const [impact, setImpact] = useState<IncidentImpactResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'intel' | 'chat'>('intel');
 
     const isOpen = selectedEvent !== null;
 
@@ -40,6 +42,11 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
             zoom: 6,
             duration: 1000,
         });
+    }, [selectedEvent]);
+
+    // Reset tab when incident changes
+    useEffect(() => {
+        setActiveTab('intel');
     }, [selectedEvent]);
 
     // Fetch detail, timeline, impact when event selected
@@ -93,7 +100,7 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
             zIndex: 20,
             display: 'flex',
             flexDirection: 'column',
-            overflowY: 'auto',
+            overflow: 'hidden',
             borderLeft: '1px solid #333',
         }}>
             {/* Header */}
@@ -116,12 +123,41 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                 }}>✕</button>
             </div>
 
+            {/* Tab switcher */}
+            <div style={{
+                display: 'flex',
+                borderBottom: '1px solid #333',
+            }}>
+                {(['intel', 'chat'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                            flex: 1,
+                            padding: '8px',
+                            background: activeTab === tab ? '#1a1a1a' : 'none',
+                            border: 'none',
+                            borderBottom: activeTab === tab ? '2px solid #ff8c00' : '2px solid transparent',
+                            color: activeTab === tab ? '#ff8c00' : '#666',
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {tab === 'intel' ? '🛡 INTELLIGENCE' : '💬 CHAT'}
+                    </button>
+                ))}
+            </div>
+
+            {/* Tab content */}
+            {activeTab === 'intel' ? (
+            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
             {loading && (
-                <div style={{ padding: 16, color: '#aaa' }}>Loading...</div>
+                <div style={{ color: '#aaa' }}>Loading...</div>
             )}
 
             {!loading && detail && (
-                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                     {/* Status + Confidence */}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -226,6 +262,12 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                         </div>
                     )}
 
+                </div>
+            )}
+            </div>
+            ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {selectedEvent && <ChatTab incidentId={selectedEvent.id} />}
                 </div>
             )}
         </div>
