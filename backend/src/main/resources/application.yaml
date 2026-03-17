@@ -36,6 +36,9 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 50
 
 management:
   endpoints:
