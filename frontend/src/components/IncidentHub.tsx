@@ -3,6 +3,7 @@ import { useMapContext } from '../context/MapContext';
 import { fetchIncidentDetail, fetchIncidentTimeline, fetchImpactRadius } from '../api';
 import type { IncidentDetailResponse, IncidentTimelineDto, IncidentImpactResponse } from '../types';
 import { ChatTab } from './ChatTab';
+import { SignalsTab } from './SignalsTab';
 
 const STATUS_COLORS: Record<string, string> = {
     DETECTED: '#888888',
@@ -30,7 +31,7 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
     const [timeline, setTimeline] = useState<IncidentTimelineDto[]>([]);
     const [impact, setImpact] = useState<IncidentImpactResponse | null>(null);
     const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'intel' | 'chat'>('intel');
+    const [activeTab, setActiveTab] = useState<'intel' | 'chat' | 'signals'>('intel');
 
     const isOpen = selectedEvent !== null;
 
@@ -128,7 +129,7 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                 display: 'flex',
                 borderBottom: '1px solid #333',
             }}>
-                {(['intel', 'chat'] as const).map(tab => (
+                {(['intel', 'chat', 'signals'] as const).map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -140,11 +141,11 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                             borderBottom: activeTab === tab ? '2px solid #ff8c00' : '2px solid transparent',
                             color: activeTab === tab ? '#ff8c00' : '#666',
                             fontFamily: 'monospace',
-                            fontSize: 12,
+                            fontSize: 11,
                             cursor: 'pointer',
                         }}
                     >
-                        {tab === 'intel' ? '🛡 INTELLIGENCE' : '💬 CHAT'}
+                        {tab === 'intel' ? '🛡 INTEL' : tab === 'chat' ? '💬 CHAT' : '📊 SIGNALS'}
                     </button>
                 ))}
             </div>
@@ -265,9 +266,13 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                 </div>
             )}
             </div>
-            ) : (
+            ) : activeTab === 'chat' ? (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     {selectedEvent && <ChatTab incidentId={selectedEvent.id} />}
+                </div>
+            ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {selectedEvent && <SignalsTab incidentId={selectedEvent.id} />}
                 </div>
             )}
         </div>

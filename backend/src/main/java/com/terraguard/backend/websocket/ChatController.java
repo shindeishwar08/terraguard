@@ -2,6 +2,8 @@ package com.terraguard.backend.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.terraguard.backend.cache.CacheService;
+import com.terraguard.backend.domain.enums.SignalType;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -43,6 +45,16 @@ public class ChatController {
             // 3. Serialize and save to Redis
             String json = objectMapper.writeValueAsString(message);
             cacheService.appendChatMessage(incidentId, json);
+
+            // 3b. If tagged — increment signal tally
+            if (message.getTag() != null && !message.getTag().isBlank()) {
+                try {
+                    SignalType signalType = SignalType.valueOf(message.getTag());
+                    cacheService.incrementSignal(incidentId, signalType);
+                } catch (IllegalArgumentException e) {
+                    log.warn("[CHAT] Unknown signal tag: {}", message.getTag());
+                }
+            }
 
             // 4. Broadcast to all subscribers of this incident room
             messagingTemplate.convertAndSend("/topic/incidents/" + incidentId, message);
