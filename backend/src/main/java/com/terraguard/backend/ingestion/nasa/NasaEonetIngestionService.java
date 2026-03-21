@@ -80,39 +80,42 @@ public class NasaEonetIngestionService {
 
     private void processEvent(EonetEvent event) {
         try {
+            // Step 1 — disaster type
             String disasterType = resolveDisasterType(event);
-            if (disasterType == null) {
-                log.debug("[NASA] Skipping unsupported category for: {}", event.getId());
-                return;
-            }
+            if (disasterType == null) return;
 
-            double[] coords = resolveCoordinates(event);
-            if (coords == null) {
-                log.warn("[NASA] No usable geometry for: {}", event.getId());
-                return;
-            }
-
+            // Step 2 — magnitude (moved up)
             Double magnitudeValue = event.getGeometry().isEmpty() ? null :
-                    event.getGeometry()
-                         .get(event.getGeometry().size() - 1)
-                         .getMagnitudeValue();
+                event.getGeometry()
+                     .get(event.getGeometry().size() - 1)
+                     .getMagnitudeValue();
             if (magnitudeValue != null && magnitudeValue >= 1000.0) {
-                magnitudeValue = 999.99; // Cap it to max allowed DB size
+                magnitudeValue = 999.99;
             }
 
+            // Step 3 — NEW wildfire filter
+            if ("WILDFIRE".equals(disasterType) && (magnitudeValue == null || magnitudeValue < 10.0)) {
+                log.debug("[NASA] Skipping small wildfire {} — area {}km²", event.getId(), magnitudeValue);
+                return;
+            }
+
+            // Step 4 — coordinates
+            double[] coords = resolveCoordinates(event);
+            if (coords == null) return;
+
+            // Step 5 — persist
             ingestionHelper.persistIncident(
-                    event.getTitle(),
-                    event.getId(),
-                    DataSource.NASA_EONET.name(),
-                    disasterType,
-                    magnitudeValue,
-                    coords[0],
-                    coords[1]
+                event.getTitle(),
+                event.getId(),
+                DataSource.NASA_EONET.name(),
+                disasterType,
+                magnitudeValue,
+                coords[0],
+                coords[1]
             );
 
         } catch (Exception e) {
-            log.error("[NASA] Failed to process event {}: {}",
-                    event.getId(), e.getMessage());
+            log.error("[NASA] Failed to process event {}: {}", event.getId(), e.getMessage());
         }
     }
 

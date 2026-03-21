@@ -77,64 +77,6 @@ public class GdacsIngestionService {
                     failures, MAX_CONSECUTIVE_FAILURES, e.getMessage());
         }
     }
-
-    // private void processEntry(SyndEntry entry) {
-    //     try {
-    //         List<Element> foreignMarkup =
-    //             (List<Element>) entry.getForeignMarkup();
-
-    //         String externalId  = getElement(foreignMarkup, "eventid", "gdacs");
-    //         String eventType   = getElement(foreignMarkup, "eventtype", "gdacs");
-    //         String alertLevel  = getElement(foreignMarkup, "alertlevel", "gdacs");
-    //         String latStr      = getElement(foreignMarkup, "lat", "geo");
-    //         String lonStr      = getElement(foreignMarkup, "long", "geo");
-
-    //         if (externalId == null || eventType == null || latStr == null) {
-    //             log.warn("[GDACS] Missing required fields, skipping entry");
-    //             return;
-    //         }
-
-    //         String disasterType = EVENT_TYPE_MAP.get(eventType);
-    //         if (disasterType == null) {
-    //             log.debug("[GDACS] Skipping unsupported event type: {}", eventType);
-    //             return;
-    //         }
-
-    //         double latitude  = Double.parseDouble(latStr);
-    //         double longitude = Double.parseDouble(lonStr);
-    //         Double severity  = ALERT_SEVERITY_MAP.getOrDefault(alertLevel, 25.0);
-
-    //         ingestionHelper.persistIncident(
-    //                 entry.getTitle(),
-    //                 externalId,
-    //                 DataSource.GDACS.name(),
-    //                 disasterType,
-    //                 severity,   // stored as magnitude for GDACS
-    //                 longitude,
-    //                 latitude
-    //         );
-
-    //     } catch (Exception e) {
-    //         log.error("[GDACS] Failed to process entry: {}", e.getMessage());
-    //     }
-    // }
-//     private void processEntry(SyndEntry entry) {
-//     try {
-//         List<Element> foreignMarkup = (List<Element>) entry.getForeignMarkup();
-        
-//         // Temporary debug — remove after fix
-//         log.info("[GDACS DEBUG] Foreign markup count: {}", 
-//             foreignMarkup != null ? foreignMarkup.size() : 0);
-//         if (foreignMarkup != null) {
-//             foreignMarkup.forEach(e -> 
-//                 log.info("[GDACS DEBUG] Element: prefix={}, name={}, value={}", 
-//                     e.getNamespacePrefix(), e.getName(), e.getValue()));
-//         }
-        
-//     } catch (Exception e) {
-//         log.error("[GDACS] Error: {}", e.getMessage());
-//     }
-// }
     private void processEntry(SyndEntry entry) {
     try {
         List<Element> foreignMarkup = (List<Element>) entry.getForeignMarkup();
@@ -152,6 +94,11 @@ public class GdacsIngestionService {
         String disasterType = EVENT_TYPE_MAP.get(eventType);
         if (disasterType == null) {
             log.debug("[GDACS] Skipping unsupported type: {}", eventType);
+            return;
+        }
+        // Filter minor wildfires — Green alert level not significant
+        if ("WILDFIRE".equals(disasterType) && ALERT_SEVERITY_MAP.getOrDefault(alertLevel, 25.0) <= 25.0) {
+            log.debug("[GDACS] Skipping green wildfire {}", eventId);
             return;
         }
 
