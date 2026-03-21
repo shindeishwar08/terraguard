@@ -33,6 +33,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:terraguard}
     user: ${DB_USERNAME:terraguard}
     password: ${DB_PASSWORD:terraguard_secret}
+  
+  websocket:
+    message-size-limit: 2048
+    send-buffer-size-limit: 524288
 
 server:
   port: 8080
