@@ -42,7 +42,6 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
             @Param("radiusMeters") double radiusMeters
     );
 
-
     @Modifying
     @Transactional
     @Query(value = """
@@ -65,8 +64,13 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
                 THEN incidents.contributing_sources || :source || ','
                 ELSE incidents.contributing_sources
             END,
-            updated_at = NOW()
-    """, nativeQuery = true)
+            updated_at = CASE
+                WHEN incidents.magnitude IS DISTINCT FROM EXCLUDED.magnitude
+                OR incidents.contributing_sources NOT LIKE '%,' || :source || ',%'
+                THEN NOW()
+                ELSE incidents.updated_at
+            END
+        """, nativeQuery = true)
     void upsertIncident(
         @Param("title")        String title,
         @Param("externalId")   String externalId,
@@ -76,7 +80,7 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
         @Param("longitude")    double longitude,
         @Param("latitude")     double latitude
     );
-
+    
     @Modifying
     @Transactional
     @Query(value = """
@@ -149,5 +153,12 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
     int deleteByStatusAndUpdatedAtBefore(
         @Param("status") IncidentStatus status,
         @Param("cutoffDate") OffsetDateTime cutoffDate
+    );
+
+    // STALE INCIDENT PURGE JOB
+    @Query("SELECT i FROM Incident i WHERE i.status IN :statuses AND i.updatedAt < :cutoff AND i.overrideLocked = false")
+    List<Incident> findStaleIncidents(
+        @Param("statuses") List<IncidentStatus> statuses,
+        @Param("cutoff") OffsetDateTime cutoff
     );
 }

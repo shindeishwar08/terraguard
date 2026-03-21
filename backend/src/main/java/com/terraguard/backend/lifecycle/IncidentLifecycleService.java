@@ -8,12 +8,15 @@ import com.terraguard.backend.domain.entity.IncidentTimelineRepository;
 import com.terraguard.backend.domain.enums.IncidentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -142,6 +145,32 @@ public class IncidentLifecycleService {
                     "No activity for 2+ hours with severity below 50");
         }
     }
+
+    // ── STALE INCIDENT PURGE JOB ──────────────────────────────
+    @Scheduled(fixedRate = 300000)
+    @Transactional
+    public void evaluateStaleIncidents() {
+        OffsetDateTime cutoff = OffsetDateTime.now().minusHours(QUIET_HOURS);
+        
+        List<Incident> staleIncidents = incidentRepository.findStaleIncidents(
+            List.of(IncidentStatus.ESCALATING, IncidentStatus.CONFIRMED),
+            cutoff
+        );
+
+        if (staleIncidents.isEmpty()) return;
+
+        log.info("[FSM] Evaluating {} stale incidents", staleIncidents.size());
+
+        for (Incident incident : staleIncidents) {
+            try {
+                evaluateTransition(incident, incident.getSeverityIndex());
+            } catch (Exception e) {
+                log.error("[FSM] Failed to evaluate stale incident {}: {}",
+                    incident.getExternalId(), e.getMessage());
+                }
+            }
+        }
+    
 
     // ── forceResolve — NASA agency closed flag ────────────────
 

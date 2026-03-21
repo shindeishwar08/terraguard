@@ -152,120 +152,122 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
 
             {/* Tab content */}
             {activeTab === 'intel' ? (
-            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {loading && (
-                <div style={{ color: '#aaa' }}>Loading...</div>
-            )}
-
-            {!loading && detail && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                    {/* Status + Confidence */}
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{
-                            padding: '4px 10px',
-                            borderRadius: 4,
-                            background: STATUS_COLORS[detail.status] ?? '#888',
-                            fontSize: 11,
-                            fontWeight: 'bold',
-                        }}>{detail.status}</span>
-
-                        {badge && (
-                            <span style={{
-                                padding: '4px 10px',
-                                borderRadius: 4,
-                                background: badge.color,
-                                fontSize: 11,
-                                fontWeight: 'bold',
-                                color: '#000',
-                            }}>{badge.label} CONFIDENCE</span>
-                        )}
-                    </div>
-
-                    {/* Severity Gauge */}
-                    <div>
-                        <div style={{ color: '#aaa', marginBottom: 6 }}>
-                            SEVERITY INDEX — {detail.severity_index.toFixed(1)}
-                        </div>
-                        <div style={{
-                            height: 8,
-                            background: '#333',
-                            borderRadius: 4,
-                            overflow: 'hidden',
-                        }}>
-                            <div style={{
-                                height: '100%',
-                                width: `${detail.severity_index}%`,
-                                background: detail.severity_index > 70
-                                    ? '#ff3232'
-                                    : detail.severity_index > 40
-                                        ? '#ffaa00'
-                                        : '#33cc66',
-                                borderRadius: 4,
-                                transition: 'width 0.5s ease',
-                            }} />
-                        </div>
-                    </div>
-
-                    {/* Metadata */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, color: '#ccc' }}>
-                        <div>TYPE: <span style={{ color: '#fff' }}>{detail.disaster_type}</span></div>
-                        <div>SOURCE: <span style={{ color: '#fff' }}>{detail.source}</span></div>
-                        {detail.magnitude && (
-                            <div>MAGNITUDE: <span style={{ color: '#fff' }}>{detail.magnitude}</span></div>
-                        )}
-                        <div>LAT/LON: <span style={{ color: '#fff' }}>{detail.latitude.toFixed(4)}, {detail.longitude.toFixed(4)}</span></div>
-                    </div>
-
-                    {/* Impact Radius */}
-                    {impact && (
-                        <div>
-                            <div style={{ color: '#aaa', marginBottom: 8 }}>IMPACT RADIUS</div>
-                            <div style={{ marginBottom: 6, color: '#ff8c00' }}>
-                                ● Within 50km ({impact.innerRing.length} cities)
-                            </div>
-                            {impact.innerRing.slice(0, 5).map((c, i) => (
-                                <div key={i} style={{ paddingLeft: 12, color: '#ccc', marginBottom: 2 }}>
-                                    {c.name}, {c.country} — {c.distanceKm.toFixed(1)}km
-                                </div>
-                            ))}
-                            <div style={{ marginTop: 8, marginBottom: 6, color: '#ffaa00' }}>
-                                ● 50–100km ({impact.outerRing.length} cities)
-                            </div>
-                            {impact.outerRing.slice(0, 5).map((c, i) => (
-                                <div key={i} style={{ paddingLeft: 12, color: '#ccc', marginBottom: 2 }}>
-                                    {c.name}, {c.country} — {c.distanceKm.toFixed(1)}km
-                                </div>
-                            ))}
-                        </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+                    {loading && (
+                        <div style={{ color: '#aaa' }}>Loading...</div>
                     )}
 
-                    {/* Timeline */}
-                    {timeline.length > 0 && (
-                        <div>
-                            <div style={{ color: '#aaa', marginBottom: 8 }}>TIMELINE</div>
-                            {timeline.map((entry) => (
-                                <div key={entry.id} style={{
-                                    borderLeft: '2px solid #333',
-                                    paddingLeft: 12,
-                                    marginBottom: 12,
-                                    color: '#ccc',
+                    {!loading && detail && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                            {/* Status + Confidence */}
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <span style={{
+                                    padding: '4px 10px',
+                                    borderRadius: 4,
+                                    background: STATUS_COLORS[detail.status] ?? '#888',
+                                    fontSize: 11,
+                                    fontWeight: 'bold',
+                                }}>{detail.status}</span>
+
+                                {badge && (
+                                    <span style={{
+                                        padding: '4px 10px',
+                                        borderRadius: 4,
+                                        background: badge.color,
+                                        fontSize: 11,
+                                        fontWeight: 'bold',
+                                        color: '#000',
+                                    }}>{badge.label} CONFIDENCE</span>
+                                )}
+                            </div>
+
+                            {/* Severity Gauge */}
+                            <div>
+                                <div style={{ color: '#aaa', marginBottom: 6 }}>
+                                    SEVERITY INDEX — {detail.severity_index.toFixed(1)}
+                                </div>
+                                <div style={{
+                                    height: 8,
+                                    background: '#333',
+                                    borderRadius: 4,
+                                    overflow: 'hidden',
                                 }}>
-                                    <div style={{ color: '#fff', marginBottom: 2 }}>{entry.message}</div>
-                                    <div style={{ color: '#666', fontSize: 11 }}>
-                                        {entry.previous_status && `${entry.previous_status} → `}{entry.new_status}
-                                    </div>
-                                    <div style={{ color: '#555', fontSize: 11 }}>
-                                        {new Date(entry.created_at).toLocaleString()}
-                                    </div>
+                                    <div style={{
+                                        height: '100%',
+                                        width: `${detail.severity_index}%`,
+                                        background: detail.severity_index > 70
+                                            ? '#ff3232'
+                                            : detail.severity_index > 40
+                                                ? '#ffaa00'
+                                                : '#33cc66',
+                                        borderRadius: 4,
+                                        transition: 'width 0.5s ease',
+                                    }} />
                                 </div>
-                            ))}
+                            </div>
+
+                            {/* Metadata */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, color: '#ccc' }}>
+                                <div>TYPE: <span style={{ color: '#fff' }}>{detail.disaster_type}</span></div>
+                                <div>SOURCE: <span style={{ color: '#fff' }}>{detail.source}</span></div>
+                                {detail.magnitude && (
+                                    <div>MAGNITUDE: <span style={{ color: '#fff' }}>{detail.magnitude}</span></div>
+                                )}
+                                <div>LAT/LON: <span style={{ color: '#fff' }}>{detail.latitude.toFixed(4)}, {detail.longitude.toFixed(4)}</span></div>
+                                <div>DETECTED: <span style={{ color: '#fff' }}>{new Date(detail.created_at).toLocaleString()}</span></div>
+                                <div>LAST UPDATE: <span style={{ color: '#fff' }}>{new Date(detail.updated_at).toLocaleString()}</span></div>
+                            </div>
+
+                            {/* Impact Radius */}
+                            {impact && (
+                                <div>
+                                    <div style={{ color: '#aaa', marginBottom: 8 }}>IMPACT RADIUS</div>
+                                    <div style={{ marginBottom: 6, color: '#ff8c00' }}>
+                                        ● Within 50km ({impact.innerRing.length} cities)
+                                    </div>
+                                    {impact.innerRing.slice(0, 5).map((c, i) => (
+                                        <div key={i} style={{ paddingLeft: 12, color: '#ccc', marginBottom: 2 }}>
+                                            {c.name}, {c.country} — {c.distanceKm.toFixed(1)}km
+                                        </div>
+                                    ))}
+                                    <div style={{ marginTop: 8, marginBottom: 6, color: '#ffaa00' }}>
+                                        ● 50–100km ({impact.outerRing.length} cities)
+                                    </div>
+                                    {impact.outerRing.slice(0, 5).map((c, i) => (
+                                        <div key={i} style={{ paddingLeft: 12, color: '#ccc', marginBottom: 2 }}>
+                                            {c.name}, {c.country} — {c.distanceKm.toFixed(1)}km
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Timeline */}
+                            {timeline.length > 0 && (
+                                <div>
+                                    <div style={{ color: '#aaa', marginBottom: 8 }}>TIMELINE</div>
+                                    {timeline.map((entry) => (
+                                        <div key={entry.id} style={{
+                                            borderLeft: '2px solid #333',
+                                            paddingLeft: 12,
+                                            marginBottom: 12,
+                                            color: '#ccc',
+                                        }}>
+                                            <div style={{ color: '#fff', marginBottom: 2 }}>{entry.message}</div>
+                                            <div style={{ color: '#666', fontSize: 11 }}>
+                                                {entry.previous_status && `${entry.previous_status} → `}{entry.new_status}
+                                            </div>
+                                            <div style={{ color: '#555', fontSize: 11 }}>
+                                                {new Date(entry.created_at).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                         </div>
                     )}
-
                 </div>
-            )}
-            </div>
             ) : activeTab === 'chat' ? (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     {selectedEvent && <ChatTab incidentId={selectedEvent.id} />}

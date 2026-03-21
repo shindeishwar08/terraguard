@@ -98,6 +98,15 @@ public class NasaEonetIngestionService {
                 log.debug("[NASA] Skipping small wildfire {} — area {}km²", event.getId(), magnitudeValue);
                 return;
             }
+            // Skip prescribed burns — not humanitarian disasters
+            if ("WILDFIRE".equals(disasterType) && event.getTitle() != null) {
+                String titleLower = event.getTitle().toLowerCase();
+                if (titleLower.contains("prescribed") || titleLower.contains(" rx ") 
+                    || titleLower.startsWith("rx ")) {
+                    log.debug("[NASA] Skipping prescribed burn: {}", event.getId());
+                    return;
+                }
+            }
 
             // Step 4 — coordinates
             double[] coords = resolveCoordinates(event);
