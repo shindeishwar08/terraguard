@@ -214,9 +214,13 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                                 {detail.magnitude && (
                                     <div>
                                         {detail.disaster_type === 'CYCLONE' ? 'WIND SPEED (km/h): ' :
-                                         detail.disaster_type === 'WILDFIRE' ? 'AREA (km²): ' :
-                                         'MAGNITUDE: '}
-                                        <span style={{ color: '#fff' }}>{detail.magnitude}</span>
+                                            detail.disaster_type === 'WILDFIRE' ? 'AREA (km²): ' :
+                                                'MAGNITUDE: '}
+                                        <span style={{ color: '#fff' }}>
+                                            {detail.disaster_type === 'WILDFIRE' && detail.magnitude >= 999.99
+                                                ? '>1000'
+                                                : detail.magnitude}
+                                        </span>
                                     </div>
                                 )}
                                 <div>LAT/LON: <span style={{ color: '#fff' }}>{detail.latitude.toFixed(4)}, {detail.longitude.toFixed(4)}</span></div>
