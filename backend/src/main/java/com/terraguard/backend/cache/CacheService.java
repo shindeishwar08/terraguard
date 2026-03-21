@@ -71,18 +71,11 @@ public class CacheService {
 
     // ── Signal Tallies (Hash) ────────────────────────────────
 
-    // public void incrementSignal(String incidentId, String signalType) {
-    //     try {
-    //         String key = RedisKeys.signalTally(incidentId);
-    //         redisTemplate.opsForHash().increment(key, signalType, 1);
-    //     } catch (Exception e) {
-    //         log.error("Failed to increment signal [{}/{}]: {}", incidentId, signalType, e.getMessage());
-    //     }
-    // }
     public void incrementSignal(String incidentId, SignalType signalType) {
         try {
             String key = RedisKeys.signalTally(incidentId);
             redisTemplate.opsForHash().increment(key, signalType.name(), 1);
+            redisTemplate.expire(key, 15, TimeUnit.DAYS);
         } catch (Exception e) {
             log.error("Failed to increment signal [{}/{}]: {}",
                 incidentId, signalType, e.getMessage());
