@@ -212,7 +212,12 @@ export const IncidentHub = ({ isMobile }: IncidentHubProps) => {
                                 <div>TYPE: <span style={{ color: '#fff' }}>{detail.disaster_type}</span></div>
                                 <div>SOURCE: <span style={{ color: '#fff' }}>{detail.source}</span></div>
                                 {detail.magnitude && (
-                                    <div>MAGNITUDE: <span style={{ color: '#fff' }}>{detail.magnitude}</span></div>
+                                    <div>
+                                        {detail.disaster_type === 'CYCLONE' ? 'WIND SPEED (km/h): ' :
+                                         detail.disaster_type === 'WILDFIRE' ? 'AREA (km²): ' :
+                                         'MAGNITUDE: '}
+                                        <span style={{ color: '#fff' }}>{detail.magnitude}</span>
+                                    </div>
                                 )}
                                 <div>LAT/LON: <span style={{ color: '#fff' }}>{detail.latitude.toFixed(4)}, {detail.longitude.toFixed(4)}</span></div>
                                 <div>DETECTED: <span style={{ color: '#fff' }}>{new Date(detail.created_at).toLocaleString()}</span></div>

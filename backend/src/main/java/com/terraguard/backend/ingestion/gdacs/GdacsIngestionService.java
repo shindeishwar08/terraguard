@@ -110,16 +110,47 @@ public class GdacsIngestionService {
         // Construct unique externalId: EQ1527754
         String externalId = eventType + eventId;
 
-        Double severity = ALERT_SEVERITY_MAP.getOrDefault(alertLevel, 25.0);
+        // Double severity = ALERT_SEVERITY_MAP.getOrDefault(alertLevel, 25.0);
 
+        // ingestionHelper.persistIncident(
+        //         entry.getTitle(),
+        //         externalId,
+        //         DataSource.GDACS.name(),
+        //         disasterType,
+        //         severity,
+        //         longitude,
+        //         latitude
+        // );
+        // Extract real magnitude only for EQ and TC
+        Double realMagnitude = null;
+        if ("EARTHQUAKE".equals(disasterType) || "CYCLONE".equals(disasterType)) {
+            Element severityEl = foreignMarkup.stream()
+                .filter(e -> "severity".equals(e.getName())
+                        && "gdacs".equals(e.getNamespacePrefix()))
+                .findFirst().orElse(null);
+            if (severityEl != null) {
+                String val = severityEl.getAttributeValue("value");
+                if (val != null) {
+                    try { realMagnitude = Double.parseDouble(val); }
+                    catch (Exception ignored) {}
+                }
+            }
+        }
+
+        // For FLOOD — use alert score as magnitude (no real value available)
+        if (realMagnitude == null) {
+            realMagnitude = ALERT_SEVERITY_MAP.getOrDefault(alertLevel, 25.0);
+        }
+
+        // Use realMagnitude for storage, alertSeverity kept for reference
         ingestionHelper.persistIncident(
-                entry.getTitle(),
-                externalId,
-                DataSource.GDACS.name(),
-                disasterType,
-                severity,
-                longitude,
-                latitude
+            entry.getTitle(),
+            externalId,
+            DataSource.GDACS.name(),
+            disasterType,
+            realMagnitude,  // ← real magnitude now
+            longitude,
+            latitude
         );
 
     } catch (Exception e) {

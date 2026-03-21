@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.terraguard.backend.domain.entity.IncidentRepository;
 import com.terraguard.backend.domain.enums.IncidentStatus;
@@ -32,6 +33,34 @@ public class DataPurgeService {
             
         } catch (Exception e) {
             log.error("[PURGE] Nightly data purge failed to execute", e);
+        }
+    }
+
+    @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
+    @Transactional
+    public void resolveStaleDetectedIncidents() {
+        try {
+            int resolved = incidentRepository.resolveStaleDetected(
+                IncidentStatus.DETECTED,
+                OffsetDateTime.now().minusDays(7)
+            );
+            log.info("[PURGE] Resolved {} stale DETECTED incidents older than 7 days.", resolved);
+        } catch (Exception e) {
+            log.error("[PURGE] Failed to resolve stale DETECTED incidents", e);
+        }
+    }
+
+    @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
+    @Transactional
+    public void resolveStaleStableIncidents() {
+        try {
+            int resolved = incidentRepository.resolveStaleDetected(
+                IncidentStatus.STABLE,
+                OffsetDateTime.now().minusDays(7)
+            );
+            log.info("[PURGE] Resolved {} stale STABLE incidents older than 7 days.", resolved);
+        } catch (Exception e) {
+            log.error("[PURGE] Failed to resolve stale STABLE incidents", e);
         }
     }
 }

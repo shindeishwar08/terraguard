@@ -87,7 +87,12 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
         UPDATE incidents SET
             severity_index   = :severity,
             confidence_score = :confidence,
-            updated_at       = NOW()
+            updated_at       = CASE
+                WHEN severity_index IS DISTINCT FROM :severity
+                OR confidence_score IS DISTINCT FROM :confidence
+                THEN NOW()
+                ELSE updated_at
+            END
         WHERE id = :id
     """, nativeQuery = true)
     void updateScores(
@@ -155,10 +160,19 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
         @Param("cutoffDate") OffsetDateTime cutoffDate
     );
 
-    // STALE INCIDENT PURGE JOB
+    // STALE(Escalating) INCIDENT PURGE JOB
     @Query("SELECT i FROM Incident i WHERE i.status IN :statuses AND i.updatedAt < :cutoff AND i.overrideLocked = false")
     List<Incident> findStaleIncidents(
         @Param("statuses") List<IncidentStatus> statuses,
+        @Param("cutoff") OffsetDateTime cutoff
+    );
+
+    // STALE(Detected) INCIDENT PURGE JOB
+    @Modifying
+    @Transactional
+    @Query("UPDATE Incident i SET i.status = 'RESOLVED' WHERE i.status = :status AND i.createdAt < :cutoff AND i.overrideLocked = false")
+    int resolveStaleDetected(
+        @Param("status") IncidentStatus status,
         @Param("cutoff") OffsetDateTime cutoff
     );
 }

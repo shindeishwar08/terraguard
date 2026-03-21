@@ -3,6 +3,8 @@ package com.terraguard.backend.scoring;
 import com.terraguard.backend.cache.CacheService;
 import com.terraguard.backend.domain.entity.Incident;
 import com.terraguard.backend.domain.enums.DataSource;
+import com.terraguard.backend.domain.enums.DisasterType;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,15 +50,29 @@ public class ScoringEngineService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
+    // private BigDecimal calculateEarthquakeSeverity(Incident incident) {
+    //     if (incident.getMagnitude() == null) return BigDecimal.ZERO;
+
+    //     double magnitude = incident.getMagnitude().doubleValue();
+    //     double score = magnitude * 10;
+
+    //     // Depth stored in magnitude for USGS — we approximate from title
+    //     // Real depth scoring will come from raw data enrichment in Phase 3
+    //     return BigDecimal.valueOf(score);
+    // }
     private BigDecimal calculateEarthquakeSeverity(Incident incident) {
         if (incident.getMagnitude() == null) return BigDecimal.ZERO;
 
-        double magnitude = incident.getMagnitude().doubleValue();
-        double score = magnitude * 10;
+        // GDACS — derive severity from real magnitude thresholds
+        if (incident.getSource() == DataSource.GDACS) {
+            double mag = incident.getMagnitude().doubleValue();
+            if (mag >= 7.0) return BigDecimal.valueOf(85);
+            if (mag >= 6.0) return BigDecimal.valueOf(55);
+            return BigDecimal.valueOf(25);
+        }
 
-        // Depth stored in magnitude for USGS — we approximate from title
-        // Real depth scoring will come from raw data enrichment in Phase 3
-        return BigDecimal.valueOf(score);
+        // USGS/NASA — magnitude * 10
+        return BigDecimal.valueOf(incident.getMagnitude().doubleValue() * 10);
     }
 
     private BigDecimal calculateWildfireSeverity(Incident incident) {
@@ -67,9 +83,24 @@ public class ScoringEngineService {
         return BigDecimal.valueOf(areaNormalized + 15); // active bonus
     }
 
+    // private BigDecimal calculateFloodCycloneSeverity(Incident incident) {
+    //     if (incident.getMagnitude() == null) return BigDecimal.ZERO;
+    //     // magnitude already stores pre-converted severity (25/55/85)
+    //     return incident.getMagnitude();
+    // }
     private BigDecimal calculateFloodCycloneSeverity(Incident incident) {
         if (incident.getMagnitude() == null) return BigDecimal.ZERO;
-        // magnitude already stores pre-converted severity (25/55/85)
+
+        if (incident.getSource() == DataSource.GDACS 
+                && incident.getDisasterType() == DisasterType.CYCLONE) {
+            // magnitude = wind speed km/h
+            double windSpeed = incident.getMagnitude().doubleValue();
+            if (windSpeed >= 120) return BigDecimal.valueOf(85); // Category 1+
+            if (windSpeed >= 63)  return BigDecimal.valueOf(55); // Tropical Storm
+            return BigDecimal.valueOf(25);                        // Depression
+        }
+
+        // FLOOD or non-GDACS — magnitude already stores alert score (25/55/85)
         return incident.getMagnitude();
     }
 

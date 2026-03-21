@@ -132,17 +132,26 @@ public class IncidentLifecycleService {
         // Re-intensification
         if (delta.compareTo(SEVERITY_DELTA) > 0) {
             transition(incident, IncidentStatus.ESCALATING,
-                    "Severity re-escalated — delta: " + delta);
+                "Severity re-escalated — delta: " + delta);
             return;
         }
 
-        // Time-based resolved
+        // // Force resolve if stable for 7+ days regardless of severity
+        // boolean stableFor7Days = incident.getUpdatedAt()
+        //     .isBefore(OffsetDateTime.now().minusDays(7));
+        // if (stableFor7Days) {
+        //     transition(incident, IncidentStatus.RESOLVED,
+        //         "Force resolved — stable for 7+ days");
+        //     return;
+        // }
+
+        // Normal time-based resolved
         boolean quietFor2Hours = incident.getUpdatedAt()
-                .isBefore(OffsetDateTime.now().minusHours(QUIET_HOURS));
+            .isBefore(OffsetDateTime.now().minusHours(QUIET_HOURS));
 
         if (quietFor2Hours && newSeverity.compareTo(STABLE_THRESHOLD) < 0) {
             transition(incident, IncidentStatus.RESOLVED,
-                    "No activity for 2+ hours with severity below 50");
+                "No activity for 2+ hours with severity below 50");
         }
     }
 
@@ -153,7 +162,7 @@ public class IncidentLifecycleService {
         OffsetDateTime cutoff = OffsetDateTime.now().minusHours(QUIET_HOURS);
         
         List<Incident> staleIncidents = incidentRepository.findStaleIncidents(
-            List.of(IncidentStatus.ESCALATING, IncidentStatus.CONFIRMED),
+            List.of(IncidentStatus.ESCALATING, IncidentStatus.CONFIRMED, IncidentStatus.STABLE),
             cutoff
         );
 
