@@ -17,7 +17,7 @@ public class FlywayConfig {
     @Value("${spring.datasource.password}")
     private String password;
 
-    @Bean(initMethod = "migrate")
+    @Bean(initMethod = "migrate", name = "flyway")
     public Flyway flyway() {
         return Flyway.configure()
                 .dataSource(url, username, password)
