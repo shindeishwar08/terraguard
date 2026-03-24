@@ -58,6 +58,11 @@ terraguard:
   cors:
     allowed-origins:
       - http://localhost:5173
+      - https://terraguard.app
+      - http://terraguard.app
+      - https://www.terraguard.app
+      - http://www.terraguard.app
+
   highlight:
     keywords:
       - collapsed
