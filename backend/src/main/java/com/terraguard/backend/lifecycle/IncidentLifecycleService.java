@@ -34,6 +34,9 @@ public class IncidentLifecycleService {
     private static final BigDecimal SEVERITY_DELTA       = BigDecimal.valueOf(10);
     private static final double     CONFIRMATION_RADIUS  = 50000.0;
     private static final long       QUIET_HOURS          = 2;
+    private static final long       STALE_HOURS          = 6;
+    private static final long       STABLE_RESOLVE_HOURS = 48;
+    private static final long       ARCHIVE_AFTER_DAYS   = 3;
     private static final int        CROWD_SURGE_THRESHOLD = 10;
 
     @Transactional
@@ -55,6 +58,7 @@ public class IncidentLifecycleService {
             case CONFIRMED  -> evaluateConfirmed(incident, oldSeverity);
             case ESCALATING -> evaluateEscalating(incident);
             case STABLE     -> evaluateStable(incident, oldSeverity);
+            case RESOLVED   -> evaluateResolved(incident);
             default -> log.debug("[FSM] No transitions for status: {}", current);
         }
     }
@@ -101,13 +105,22 @@ public class IncidentLifecycleService {
             return;
         }
 
-        // Stable condition
+        // Fast-lane: low severity + quiet for 2h -> STABLE
         boolean quietFor2Hours = incident.getUpdatedAt()
                 .isBefore(OffsetDateTime.now().minusHours(QUIET_HOURS));
 
         if (quietFor2Hours && newSeverity.compareTo(STABLE_THRESHOLD) < 0) {
             transition(incident, IncidentStatus.STABLE,
                     "Severity stable below 50 for 2 hours — no escalation triggers");
+            return;
+        }
+
+        // Catch-all: no source activity for 6+ hours -> STABLE regardless of severity
+        boolean staleFor6Hours = incident.getUpdatedAt()
+                .isBefore(OffsetDateTime.now().minusHours(STALE_HOURS));
+        if (staleFor6Hours) {
+            transition(incident, IncidentStatus.STABLE,
+                    "No source activity for " + STALE_HOURS + "+ hours — force stabilized");
         }
     }
 
@@ -136,33 +149,44 @@ public class IncidentLifecycleService {
             return;
         }
 
-        // // Force resolve if stable for 7+ days regardless of severity
-        // boolean stableFor7Days = incident.getUpdatedAt()
-        //     .isBefore(OffsetDateTime.now().minusDays(7));
-        // if (stableFor7Days) {
-        //     transition(incident, IncidentStatus.RESOLVED,
-        //         "Force resolved — stable for 7+ days");
-        //     return;
-        // }
+        // Fast-lane: low severity + quiet for 6h -> RESOLVED
+        boolean quietFor6Hours = incident.getUpdatedAt()
+            .isBefore(OffsetDateTime.now().minusHours(STALE_HOURS));
 
-        // Normal time-based resolved
-        boolean quietFor2Hours = incident.getUpdatedAt()
-            .isBefore(OffsetDateTime.now().minusHours(QUIET_HOURS));
-
-        if (quietFor2Hours && newSeverity.compareTo(STABLE_THRESHOLD) < 0) {
+        if (quietFor6Hours && newSeverity.compareTo(STABLE_THRESHOLD) < 0) {
             transition(incident, IncidentStatus.RESOLVED,
-                "No activity for 2+ hours with severity below 50");
+                "No activity for " + STALE_HOURS + "+ hours with severity below 50");
+            return;
+        }
+
+        // Catch-all: stable with no activity for 48 hours -> RESOLVED regardless of severity
+        boolean staleFor48Hours = incident.getUpdatedAt()
+            .isBefore(OffsetDateTime.now().minusHours(STABLE_RESOLVE_HOURS));
+        if (staleFor48Hours) {
+            transition(incident, IncidentStatus.RESOLVED,
+                "No activity for " + STABLE_RESOLVE_HOURS + "+ hours in STABLE - force resolved");
         }
     }
 
-    // ── STALE INCIDENT PURGE JOB ──────────────────────────────
+    // ── RESOLVED → ARCHIVED ───────────────────────────────────
+
+    private void evaluateResolved(Incident incident) {
+        boolean resolvedFor3Days = incident.getUpdatedAt()
+            .isBefore(OffsetDateTime.now().minusDays(ARCHIVE_AFTER_DAYS));
+        if (resolvedFor3Days) {
+            transition(incident, IncidentStatus.ARCHIVED,
+                "No activity for " + ARCHIVE_AFTER_DAYS + "+ days in RESOLVED - archived");
+        }
+    }
+
+    // ── STALE INCIDENT EVALUATION JOB ────────────────────────────
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void evaluateStaleIncidents() {
         OffsetDateTime cutoff = OffsetDateTime.now().minusHours(QUIET_HOURS);
         
         List<Incident> staleIncidents = incidentRepository.findStaleIncidents(
-            List.of(IncidentStatus.ESCALATING, IncidentStatus.CONFIRMED, IncidentStatus.STABLE),
+            List.of(IncidentStatus.ESCALATING, IncidentStatus.CONFIRMED, IncidentStatus.STABLE, IncidentStatus.RESOLVED),
             cutoff
         );
 

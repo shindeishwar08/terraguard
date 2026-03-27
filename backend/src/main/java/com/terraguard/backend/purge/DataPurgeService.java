@@ -42,25 +42,13 @@ public class DataPurgeService {
         try {
             int resolved = incidentRepository.resolveStaleDetected(
                 IncidentStatus.DETECTED,
-                OffsetDateTime.now().minusDays(7)
+                OffsetDateTime.now().minusDays(4)
             );
-            log.info("[PURGE] Resolved {} stale DETECTED incidents older than 7 days.", resolved);
+            log.info("[PURGE] Resolved {} stale DETECTED incidents older than 4 days.", resolved);
         } catch (Exception e) {
             log.error("[PURGE] Failed to resolve stale DETECTED incidents", e);
         }
     }
 
-    @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
-    @Transactional
-    public void resolveStaleStableIncidents() {
-        try {
-            int resolved = incidentRepository.resolveStaleDetected(
-                IncidentStatus.STABLE,
-                OffsetDateTime.now().minusDays(7)
-            );
-            log.info("[PURGE] Resolved {} stale STABLE incidents older than 7 days.", resolved);
-        } catch (Exception e) {
-            log.error("[PURGE] Failed to resolve stale STABLE incidents", e);
-        }
-    }
+    // CONFIRMED and STABLE staleness is now handled by the lifecycle FSM
 }

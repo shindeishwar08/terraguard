@@ -54,7 +54,7 @@ Every ingestion uses `INSERT ... ON CONFLICT (external_id, source) DO UPDATE`. T
 Instead of recompiling the global snapshot on every incident update, a Redis boolean flag (`snapshot:dirty`) is set. `SnapshotCompilerService` checks every 5 seconds — if dirty, it fetches all active incidents, serializes to JSON, caches in Redis, and clears the flag. No matter how many incidents update per cycle, exactly one recompile occurs. Served with `Cache-Control: public, max-age=5` for CDN-level caching.
 
 ### Finite State Machine with override locking
-Six states: `DETECTED → CONFIRMED → ESCALATING → STABLE → RESOLVED → ARCHIVED`. Transitions are driven by severity scores, source confirmation, and time-based quiet periods. `override_locked=true` permanently blocks FSM engine for any incident — human judgment overrides automated transitions. Every transition appends an immutable audit entry to `incident_timeline`.
+Six states: `DETECTED → CONFIRMED → ESCALATING ↔ STABLE → RESOLVED → ARCHIVED`. Transitions are driven by severity scores, source confirmation, crowd signals, and graduated time-based staleness decay. `override_locked=true` permanently blocks FSM engine for any incident — human judgment overrides automated transitions. Every transition appends an immutable audit entry to `incident_timeline`.
 
 ### O(1) signal aggregation via Redis Hash
 Crowd signals (`ROAD_BLOCKED`, `MEDICAL_NEED` etc.) are stored as Redis Hash fields with `HINCRBY` — atomic increment, no locks. `HGETALL` is O(1) regardless of message volume. Compared to SQL `COUNT(*) GROUP BY signal_type`, Redis returns in microseconds at any scale. TTL set to 15 days matching the incident purge window.
@@ -63,7 +63,7 @@ Crowd signals (`ROAD_BLOCKED`, `MEDICAL_NEED` etc.) are stored as Redis Hash fie
 `CREATE INDEX ON cities USING GIST(CAST(geometry AS geography))` — geography type accounts for Earth's curvature, critical for accurate long-distance proximity queries. `ST_DWithin` with this index drops from 731ms to 55ms across 47,868 cities (13x improvement). Note: `::` cast shorthand is unsupported in `CREATE INDEX` — explicit `CAST()` required.
 
 ### Stale FSM evaluator
-A scheduled job runs every 5 minutes evaluating `ESCALATING`, `CONFIRMED`, and `STABLE` incidents not updated in 2+ hours. Without this, incidents that stop being ingested stay `ESCALATING` forever. Complements the nightly purge that force-resolves `DETECTED` incidents after 7 days and `STABLE` incidents after 7 days.
+A scheduled job runs every 5 minutes evaluating `ESCALATING`, `CONFIRMED`, `STABLE`, and `RESOLVED` incidents not updated in 2+ hours. Uses graduated staleness decay — CONFIRMED incidents stabilize after 6 hours of no source activity regardless of severity, STABLE incidents resolve after 6 hours (low severity) or 48 hours (any severity), and RESOLVED incidents archive after 3 days. Complements the nightly purge that force-resolves `DETECTED` incidents after 4 days and deletes `ARCHIVED` incidents after 15 days.
 
 ---
 
