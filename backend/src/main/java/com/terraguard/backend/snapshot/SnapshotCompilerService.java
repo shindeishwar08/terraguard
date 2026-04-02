@@ -1,6 +1,8 @@
 package com.terraguard.backend.snapshot;
 
 import java.util.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -53,4 +55,22 @@ public class SnapshotCompilerService {
             log.error("[SNAPSHOT] Failed to compile global snapshot", e);
         }
     }
+
+    public String compileSnapshotFromDb() {
+        try {
+            List<Incident> activeIncidents = incidentRepository.findByStatusNotIn(
+                Arrays.asList(IncidentStatus.RESOLVED, IncidentStatus.ARCHIVED)
+            );
+
+            List<GlobalEventResponse> snapshot = activeIncidents.stream()
+                .map(incidentMapper::toGlobalEventResponse)
+                .toList();
+
+            return objectMapper.writeValueAsString(snapshot);
+        } catch (JsonProcessingException e) {
+            log.error("[SNAPSHOT] Failed to compile snapshot from DB", e);
+            return null;
+        }
+    }
+
 }
